@@ -26,12 +26,21 @@ struct ProductivityCalculator {
         
         // Calculate total focused time in minutes
         let totalFocusedSeconds = sessions.reduce(0.0) { total, session in
-            total + session.duration
+            total + session.focusedDuration
         }
         let focusedMinutes = totalFocusedSeconds / 60.0
         
         // Count interruptions
-        let interruptionCount = sessions.filter { $0.wasInterrupted }.count
+        let interruptionCount = sessions.reduce(0) { total, session in
+            total + session.interruptions.count
+        }
+        
+        // Calculate total interruption duration
+        let totalInterruptionSeconds = sessions.reduce(0.0) { total, session in
+            let sessionInterruptionDuration = session.interruptions.reduce(0.0) { $0 + $1.duration }
+            return total + sessionInterruptionDuration
+        }
+        let interruptionDurationMinutes = totalInterruptionSeconds / 60.0
         
         // Calculate penalty
         let penaltyTime = Double(interruptionCount * penaltyMinutes)
@@ -47,6 +56,7 @@ struct ProductivityCalculator {
         return ProductivityMetrics(
             focusedMinutes: focusedMinutes,
             interruptionCount: interruptionCount,
+            interruptionDurationMinutes: interruptionDurationMinutes,
             penaltyMinutes: penaltyTime,
             productivityScore: productivityScore,
             sessionCount: sessions.count
@@ -102,6 +112,7 @@ struct ProductivityCalculator {
 struct ProductivityMetrics {
     let focusedMinutes: Double
     let interruptionCount: Int
+    let interruptionDurationMinutes: Double
     let penaltyMinutes: Double
     let productivityScore: Double // 0.0 to 1.0
     let sessionCount: Int
@@ -113,13 +124,22 @@ struct ProductivityMetrics {
     
     /// Formatted focused time (e.g., "2h 30m")
     var focusedTimeFormatted: String {
-        let hours = Int(focusedMinutes) / 60
-        let minutes = Int(focusedMinutes) % 60
+        formatDuration(minutes: focusedMinutes)
+    }
+    
+    /// Formatted interruption duration (e.g., "15m")
+    var interruptionDurationFormatted: String {
+        formatDuration(minutes: interruptionDurationMinutes)
+    }
+    
+    private func formatDuration(minutes: Double) -> String {
+        let hours = Int(minutes) / 60
+        let mins = Int(minutes) % 60
         
         if hours > 0 {
-            return "\(hours)h \(minutes)m"
+            return "\(hours)h \(mins)m"
         } else {
-            return "\(minutes)m"
+            return "\(mins)m"
         }
     }
     

@@ -149,6 +149,17 @@ class TrackingManager {
         )
     }
     
+    /// Get metrics for the current active session
+    func getCurrentSessionMetrics() -> ProductivityMetrics? {
+        guard let session = currentSession else { return nil }
+        let settings = AppSettings.getOrCreate(in: modelContext)
+        
+        return ProductivityCalculator.calculate(
+            sessions: [session],
+            penaltyMinutes: settings.penaltyPerInterruptionMinutes
+        )
+    }
+    
     // MARK: - Private Helpers
     
     private func checkForActiveSessions() {

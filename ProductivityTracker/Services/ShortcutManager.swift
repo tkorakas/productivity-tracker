@@ -26,10 +26,12 @@ class ShortcutManager {
     
     private func handleToggleSession() {
         if trackingManager.isTracking {
-            // If tracking, end session
-            // In a real implementation, you might want to show a dialog
-            // to ask for an interruption reason
-            trackingManager.endSession()
+            // If tracking, toggle interruption state
+            if trackingManager.isInterrupted {
+                trackingManager.endInterruption()
+            } else {
+                trackingManager.startInterruption()
+            }
         } else {
             // If not tracking, start a new session
             trackingManager.startSession()

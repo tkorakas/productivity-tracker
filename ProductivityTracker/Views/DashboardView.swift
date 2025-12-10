@@ -80,7 +80,7 @@ struct OverviewTab: View {
                 SummaryCard(
                     icon: "exclamationmark.triangle.fill",
                     label: "Interruptions",
-                    value: "\(metrics.interruptionCount)",
+                    value: "\(metrics.interruptionCount) (\(metrics.interruptionDurationFormatted))",
                     color: .orange
                 )
                 

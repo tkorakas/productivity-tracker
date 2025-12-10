@@ -33,8 +33,6 @@ struct MenuBarView: View {
             // Current Status
             statusSection
             
-            Divider()
-            
             // Today's Metrics
             metricsSection
             
@@ -130,31 +128,36 @@ struct MenuBarView: View {
     }
     
     private var metricsSection: some View {
-        let metrics = trackingManager.getTodaysMetrics()
-        
-        return VStack(alignment: .leading, spacing: 8) {
-            Text("Today's Progress")
-                .font(.subheadline)
-                .fontWeight(.semibold)
-            
-            HStack {
-                MetricCard(
-                    icon: "clock.fill",
-                    label: "Focused",
-                    value: metrics.focusedTimeFormatted
-                )
+        Group {
+            if let metrics = trackingManager.getCurrentSessionMetrics() {
+                Divider()
                 
-                MetricCard(
-                    icon: "exclamationmark.triangle.fill",
-                    label: "Interruptions",
-                    value: "\(metrics.interruptionCount)"
-                )
-                
-                MetricCard(
-                    icon: "chart.line.uptrend.xyaxis",
-                    label: "Score",
-                    value: "\(Int(metrics.productivityPercentage))%"
-                )
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Session Progress")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                    
+                    HStack {
+                        MetricCard(
+                            icon: "clock.fill",
+                            label: "Focused",
+                            value: metrics.focusedTimeFormatted
+                        )
+                        
+                        MetricCard(
+                            icon: "exclamationmark.triangle.fill",
+                            label: "Interruptions",
+                            value: "\(metrics.interruptionCount) (\(metrics.interruptionDurationFormatted))"
+                        )
+                        
+                        MetricCard(
+                            icon: "chart.line.uptrend.xyaxis",
+                            label: "Score",
+                            value: "\(Int(metrics.productivityPercentage))%"
+                        )
+                    }
+                }
+                .id("metrics-\(currentTime)") // Force redraw
             }
         }
     }
