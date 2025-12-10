@@ -217,6 +217,19 @@ struct MenuBarView: View {
             Text("Press ⌥⌃Space to toggle")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
+            
+            Divider()
+            
+            // Quit Button
+            Button(action: {
+                NSApplication.shared.terminate(nil)
+            }) {
+                Text("Quit App")
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 5)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.secondary)
         }
     }
     
