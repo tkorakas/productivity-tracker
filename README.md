@@ -8,21 +8,9 @@
 
   <p align="center">
     A macOS menu bar app to track focus sessions, interruptions, and productivity metrics based on the mathematics of deep work.
-    <br />
-    <a href="https://github.com/your_username/productivity-tracker"><strong>Explore the docs »</strong></a>
-    <br />
-    <br />
-    <a href="https://github.com/your_username/productivity-tracker">View Demo</a>
-    ·
-    <a href="https://github.com/your_username/productivity-tracker/issues">Report Bug</a>
-    ·
-    <a href="https://github.com/your_username/productivity-tracker/issues">Request Feature</a>
   </p>
 </div>
 
-
-
-<!-- TABLE OF CONTENTS -->
 <details>
   <summary>Table of Contents</summary>
   <ol>
@@ -41,10 +29,8 @@
       </ul>
     </li>
     <li><a href="#usage">Usage</a></li>
-    <li><a href="#roadmap">Roadmap</a></li>
     <li><a href="#contributing">Contributing</a></li>
     <li><a href="#license">License</a></li>
-    <li><a href="#contact">Contact</a></li>
   </ol>
 </details>
 
@@ -84,7 +70,6 @@ The article models productivity using three critical variables that determine wh
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
-
 <!-- GETTING STARTED -->
 ## Getting Started
 
@@ -117,30 +102,35 @@ To get a local copy up and running follow these simple steps.
 
 The app lives in your macOS Menu Bar.
 
+### Session Management
+
 1.  **Start a Session**: Click "Start Session" or use the global shortcut (`Opt + Ctrl + Space`) to begin a focus block.
-2.  **Log an Interruption**: When you are interrupted, press the shortcut again or click "Log Interruption". The timer will pause, and the app will track the duration of the interruption.
-3.  **Resume Focus**: Once the interruption is handled, click "Resume Focus". The app will log the interruption and help you visualize the context switch.
-4.  **Review History**: Open the History view to see a calendar of your past sessions and identify patterns in your productivity.
+
+    <img src="images/menu-start.png" alt="Start Session" width="400"/>
+
+2.  **Track Progress**: View your current session status, including focus time and interruptions.
+
+    <img src="images/menu-tracking.png" alt="Tracking Session" width="400"/>
+
+### Handling Interruptions
+
+3.  **Log an Interruption**: When you are interrupted, press the shortcut again or click "Log Interruption". The timer will pause, and the app will track the duration of the interruption.
+
+    <img src="images/menu-interruption.png" alt="Interruption" width="400"/>
+
+4.  **Resume Focus**: Once the interruption is handled, click "Resume Focus". The app will log the interruption and help you visualize the context switch.
+
+### History & Analytics
+
+5.  **Review History**: Open the History view to see a calendar of your past sessions and identify patterns in your productivity.
+
+    <img src="images/history-list.png" alt="History List" width="400"/>
+
+6.  **Detailed Insights**: Expand a session to see the timeline and detailed metrics including context loss.
+
+    <img src="images/history-detail.png" alt="History Details" width="400"/>
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
-
-<!-- ROADMAP -->
-## Roadmap
-
-- [x] Basic Session Tracking
-- [x] Interruption Logging
-- [x] Visual Timeline (Focus vs. Interruption)
-- [x] History & Calendar View
-- [ ] Customizable Recovery Time (Delta) settings
-- [ ] Analytics Dashboard with Lambda/Theta calculations
-- [ ] Export data to CSV
-
-See the [open issues](https://github.com/your_username/productivity-tracker/issues) for a full list of proposed features (and known issues).
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
 
 
 <!-- CONTRIBUTING -->

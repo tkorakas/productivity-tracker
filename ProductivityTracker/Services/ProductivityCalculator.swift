@@ -11,17 +11,20 @@ import Foundation
 /// 
 /// Formula:
 /// Productivity = FocusedTime / (FocusedTime + Penalty)
-/// where Penalty = Interruptions × PenaltyPerInterruption (default: 15 minutes)
+/// where Penalty = Interruptions × PenaltyPerInterruption (default: 11 minutes)
 struct ProductivityCalculator {
+    
+    /// The standard recovery time in minutes after an interruption
+    static let recoveryTimeMinutes = 5
     
     /// Calculate productivity score for a set of work sessions
     /// - Parameters:
     ///   - sessions: Array of work sessions to analyze
-    ///   - penaltyMinutes: Penalty in minutes per interruption (default: 15)
+    ///   - penaltyMinutes: Penalty in minutes per interruption (default: 11)
     /// - Returns: ProductivityMetrics containing all calculated values
     static func calculate(
         sessions: [WorkSession],
-        penaltyMinutes: Int = 15
+        penaltyMinutes: Int = ProductivityCalculator.recoveryTimeMinutes
     ) -> ProductivityMetrics {
         
         // Calculate total focused time in minutes

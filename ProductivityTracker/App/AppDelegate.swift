@@ -8,6 +8,7 @@
 import Cocoa
 import SwiftUI
 import SwiftData
+import UserNotifications
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem?
@@ -19,6 +20,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var shortcutManager: ShortcutManager?
     
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Request Notification Permissions only if we have a bundle identifier (running as App)
+        if Bundle.main.bundleIdentifier != nil {
+            UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
+                if let error = error {
+                    print("Error requesting notification authorization: \(error)")
+                }
+            }
+        }
+        
         // Create the status bar item
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         

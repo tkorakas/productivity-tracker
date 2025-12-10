@@ -11,33 +11,42 @@ struct SessionTimelineView: View {
     let session: WorkSession
     
     var body: some View {
-        GeometryReader { geometry in
-            let segments = calculateSegments()
-            let totalDuration = session.duration
-            
-            HStack(spacing: 1) {
-                ForEach(segments) { segment in
-                    let width = totalDuration > 0 ? (segment.duration / totalDuration) * geometry.size.width : 0
-                    
-                    ZStack {
-                        // Background Box
-                        Rectangle()
-                            .fill(segment.color)
+        VStack(spacing: 8) {
+            GeometryReader { geometry in
+                let segments = calculateSegments()
+                let totalDuration = session.duration
+                
+                HStack(spacing: 1) {
+                    ForEach(segments) { segment in
+                        let width = totalDuration > 0 ? (segment.duration / totalDuration) * geometry.size.width : 0
                         
-                        // Duration Text (only if wide enough)
-                        if width > 20 {
-                            Text(segment.durationString)
-                                .font(.system(size: 9, weight: .bold))
-                                .foregroundStyle(.white)
-                                .lineLimit(1)
+                        ZStack {
+                            // Background Box
+                            Rectangle()
+                                .fill(segment.color)
+                            
+                            // Duration Text (only if wide enough)
+                            if width > 20 {
+                                Text(segment.durationString)
+                                    .font(.system(size: 9, weight: .bold))
+                                    .foregroundStyle(.white)
+                                    .lineLimit(1)
+                            }
                         }
+                        .frame(width: max(0, width))
                     }
-                    .frame(width: max(0, width))
                 }
             }
+            .frame(height: 30)
+            .clipShape(RoundedRectangle(cornerRadius: 4))
+            
+            // Legend
+            HStack(spacing: 12) {
+                LegendItem(color: .blue, label: "Focused")
+                LegendItem(color: .purple, label: "Recovery")
+                LegendItem(color: .orange, label: "Interruption")
+            }
         }
-        .frame(height: 30)
-        .clipShape(RoundedRectangle(cornerRadius: 4))
     }
     
     private func calculateSegments() -> [TimelineSegment] {
@@ -77,10 +86,10 @@ struct SessionTimelineView: View {
             
             currentTime = intEnd
             
-            // Set up penalty for next phase (11 minutes)
+            // Set up penalty for next phase
             // Only if the interruption has actually ended
             if interruption.endTime != nil {
-                penaltyUntil = intEnd.addingTimeInterval(11 * 60)
+                penaltyUntil = intEnd.addingTimeInterval(Double(ProductivityCalculator.recoveryTimeMinutes) * 60)
             } else {
                 penaltyUntil = nil // Still interrupted, no penalty scheduled yet
             }
@@ -124,7 +133,7 @@ struct TimelineSegment: Identifiable {
     
     var color: Color {
         switch type {
-        case .focus: return .teal
+        case .focus: return .blue
         case .interruption: return .orange
         case .penalty: return .purple
         }
@@ -135,4 +144,20 @@ enum SegmentType {
     case focus
     case interruption
     case penalty
+}
+
+struct LegendItem: View {
+    let color: Color
+    let label: String
+    
+    var body: some View {
+        HStack(spacing: 4) {
+            Circle()
+                .fill(color)
+                .frame(width: 6, height: 6)
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
 }
