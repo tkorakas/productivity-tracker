@@ -17,7 +17,8 @@ struct ProductivityTrackerApp: App {
         let schema = Schema([
             WorkSession.self,
             AppSettings.self,
-            DayPlan.self
+            DayPlan.self,
+            Interruption.self
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
         

@@ -16,10 +16,16 @@ class TrackingManager {
     
     // Current state
     var currentSession: WorkSession?
+    var currentInterruption: Interruption?
+    
     var isTracking: Bool = false {
         didSet {
             onTrackingStateChanged?(isTracking)
         }
+    }
+    
+    var isInterrupted: Bool {
+        return currentInterruption != nil
     }
     
     // Callback for state changes
@@ -52,16 +58,43 @@ class TrackingManager {
         print("Started session")
     }
     
+    /// Start an interruption
+    func startInterruption(reason: String? = nil) {
+        guard let session = currentSession else { return }
+        guard currentInterruption == nil else { return }
+        
+        let interruption = Interruption(startTime: Date(), reason: reason)
+        interruption.session = session
+        session.interruptions.append(interruption)
+        
+        currentInterruption = interruption
+        
+        try? modelContext.save()
+    }
+    
+    /// End the current interruption
+    func endInterruption() {
+        guard let interruption = currentInterruption else { return }
+        
+        interruption.endTime = Date()
+        currentInterruption = nil
+        
+        try? modelContext.save()
+    }
+    
     /// End the current work session
-    /// - Parameter interruptionReason: Optional reason for interruption
-    func endSession(interruptionReason: String? = nil) {
+    func endSession() {
         guard let session = currentSession else {
             print("No active session to end")
             return
         }
         
+        // If there's an active interruption, end it first
+        if currentInterruption != nil {
+            endInterruption()
+        }
+        
         session.endTime = Date()
-        session.interruptionReason = interruptionReason
         
         try? modelContext.save()
         
@@ -122,12 +155,21 @@ class TrackingManager {
         let descriptor = FetchDescriptor<WorkSession>(
             predicate: #Predicate { session in
                 session.endTime == nil
-            }
+            },
+            sortBy: [SortDescriptor(\.startTime, order: .reverse)]
         )
         
         if let activeSession = try? modelContext.fetch(descriptor).first {
             currentSession = activeSession
             isTracking = true
+            
+            // Check for active interruption
+            // Since we can't query relationships directly in #Predicate easily for this case,
+            // we'll check the loaded session's interruptions
+            if let activeInterruption = activeSession.interruptions.first(where: { $0.endTime == nil }) {
+                currentInterruption = activeInterruption
+            }
+            
             print("Resumed active session")
         }
     }

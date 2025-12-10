@@ -12,7 +12,12 @@ struct MenuBarView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var trackingManager: TrackingManager
     @State private var showingInterruptionDialog = false
+    @State private var showingHistory = false
     @State private var interruptionReason = ""
+    
+    // Timer to update duration display
+    @State private var currentTime = Date()
+    private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     
     init(trackingManager: TrackingManager) {
         _trackingManager = State(initialValue: trackingManager)
@@ -44,11 +49,17 @@ struct MenuBarView: View {
             InterruptionReasonView(
                 interruptionReason: $interruptionReason,
                 onSubmit: {
-                    trackingManager.endSession(interruptionReason: interruptionReason.isEmpty ? nil : interruptionReason)
+                    trackingManager.startInterruption(reason: interruptionReason.isEmpty ? nil : interruptionReason)
                     showingInterruptionDialog = false
                     interruptionReason = ""
                 }
             )
+        }
+        .sheet(isPresented: $showingHistory) {
+            HistoryView(isPresented: $showingHistory)
+        }
+        .onReceive(timer) { _ in
+            currentTime = Date()
         }
     }
     
@@ -76,22 +87,33 @@ struct MenuBarView: View {
             if trackingManager.isTracking {
                 HStack {
                     Circle()
-                        .fill(.green)
+                        .fill(trackingManager.isInterrupted ? .orange : .green)
                         .frame(width: 12, height: 12)
                     
-                    Text("Tracking")
+                    Text(trackingManager.isInterrupted ? "Interrupted" : "Tracking")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
                 
-                Text("Focus Session")
+                Text(trackingManager.isInterrupted ? "Interruption" : "Focus Session")
                     .font(.title3)
                     .fontWeight(.semibold)
                 
-                if let session = trackingManager.currentSession {
+                if trackingManager.isInterrupted, let interruption = trackingManager.currentInterruption {
+                    Text(interruption.durationFormatted)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .id("interruption-\(currentTime)") // Force redraw
+                } else if let session = trackingManager.currentSession {
                     Text(session.durationFormatted)
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                        .id("session-\(currentTime)") // Force redraw
+                    
+                    // Timeline Visualization
+                    SessionTimelineView(session: session)
+                        .padding(.top, 4)
+                        .id("timeline-\(currentTime)") // Force redraw
                 }
             } else {
                 HStack {
@@ -152,12 +174,35 @@ struct MenuBarView: View {
             .buttonStyle(.borderedProminent)
             .tint(trackingManager.isTracking ? .red : .green)
             
-            // Log Interruption Button
+            // Log Interruption / Resume Button
             if trackingManager.isTracking {
-                Button(action: { showingInterruptionDialog = true }) {
+                if trackingManager.isInterrupted {
+                    Button(action: { trackingManager.endInterruption() }) {
+                        HStack {
+                            Image(systemName: "play.fill")
+                            Text("Resume Focus")
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 5)
+                    }
+                    .buttonStyle(.bordered)
+                } else {
+                    Button(action: { showingInterruptionDialog = true }) {
+                        HStack {
+                            Image(systemName: "exclamationmark.triangle")
+                            Text("Log Interruption")
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 5)
+                    }
+                    .buttonStyle(.bordered)
+                }
+            } else {
+                // History Button (Only when not tracking)
+                Button(action: { showingHistory = true }) {
                     HStack {
-                        Image(systemName: "exclamationmark.triangle")
-                        Text("Log Interruption")
+                        Image(systemName: "clock.arrow.circlepath")
+                        Text("History")
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 5)
@@ -174,7 +219,9 @@ struct MenuBarView: View {
     
     private func toggleSession() {
         if trackingManager.isTracking {
-            showingInterruptionDialog = true
+            // If we are tracking, we just stop the session.
+            // If there is an active interruption, trackingManager.endSession() handles it.
+            trackingManager.endSession()
         } else {
             trackingManager.startSession()
         }
@@ -221,10 +268,10 @@ struct InterruptionReasonView: View {
     
     var body: some View {
         VStack(spacing: 16) {
-            Text("End Session")
+            Text("Log Interruption")
                 .font(.headline)
             
-            Text("Was this session interrupted?")
+            Text("What is interrupting you?")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
             
@@ -233,13 +280,13 @@ struct InterruptionReasonView: View {
                 .lineLimit(3...5)
             
             HStack {
-                Button("No Interruption") {
+                Button("Cancel") {
                     interruptionReason = ""
-                    onSubmit()
+                    dismiss()
                 }
                 .buttonStyle(.bordered)
                 
-                Button("End Session") {
+                Button("Start Interruption") {
                     onSubmit()
                 }
                 .buttonStyle(.borderedProminent)

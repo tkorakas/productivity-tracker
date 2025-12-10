@@ -15,7 +15,8 @@ extension Schema {
         Schema([
             WorkSession.self,
             AppSettings.self,
-            DayPlan.self
+            DayPlan.self,
+            Interruption.self
         ])
     }
 }

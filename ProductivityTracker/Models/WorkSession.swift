@@ -13,7 +13,10 @@ final class WorkSession {
     var id: UUID
     var startTime: Date
     var endTime: Date?
-    var interruptionReason: String?
+    var interruptionReason: String? // Deprecated, keeping for migration if needed, but we use 'interruptions' now
+    
+    @Relationship(deleteRule: .cascade) 
+    var interruptions: [Interruption] = []
     
     init(
         id: UUID = UUID(),
@@ -27,10 +30,17 @@ final class WorkSession {
         self.interruptionReason = interruptionReason
     }
     
-    // Computed property: Duration in seconds
+    // Computed property: Duration in seconds (Total elapsed time)
     var duration: TimeInterval {
         let end = endTime ?? Date()
         return end.timeIntervalSince(startTime)
+    }
+    
+    // Computed property: Actual focused duration (Total time - Interruption time)
+    var focusedDuration: TimeInterval {
+        let totalDuration = duration
+        let totalInterruptionDuration = interruptions.reduce(0) { $0 + $1.duration }
+        return max(0, totalDuration - totalInterruptionDuration)
     }
     
     // Computed property: Duration formatted as string
@@ -53,6 +63,6 @@ final class WorkSession {
     
     // Computed property: Was this session interrupted?
     var wasInterrupted: Bool {
-        return interruptionReason != nil
+        return !interruptions.isEmpty || interruptionReason != nil
     }
 }
