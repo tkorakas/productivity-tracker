@@ -11,11 +11,8 @@ import SwiftData
 struct MenuBarView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var trackingManager: TrackingManager
-    @State private var showingTaskPicker = false
     @State private var showingInterruptionDialog = false
     @State private var interruptionReason = ""
-    
-    @Query(sort: \Task.createdAt, order: .reverse) private var tasks: [Task]
     
     init(trackingManager: TrackingManager) {
         _trackingManager = State(initialValue: trackingManager)
@@ -43,9 +40,6 @@ struct MenuBarView: View {
         }
         .padding()
         .frame(width: 360)
-        .sheet(isPresented: $showingTaskPicker) {
-            TaskPickerView(trackingManager: trackingManager)
-        }
         .sheet(isPresented: $showingInterruptionDialog) {
             InterruptionReasonView(
                 interruptionReason: $interruptionReason,
@@ -90,15 +84,9 @@ struct MenuBarView: View {
                         .foregroundStyle(.secondary)
                 }
                 
-                if let task = trackingManager.currentTask {
-                    Text(task.title)
-                        .font(.title3)
-                        .fontWeight(.semibold)
-                } else {
-                    Text("Ad-hoc Session")
-                        .font(.title3)
-                        .foregroundStyle(.secondary)
-                }
+                Text("Focus Session")
+                    .font(.title3)
+                    .fontWeight(.semibold)
                 
                 if let session = trackingManager.currentSession {
                     Text(session.durationFormatted)
@@ -164,15 +152,15 @@ struct MenuBarView: View {
             .buttonStyle(.borderedProminent)
             .tint(trackingManager.isTracking ? .red : .green)
             
-            // Quick Task Button
-            if !trackingManager.isTracking {
-                Button(action: { showingTaskPicker = true }) {
+            // Log Interruption Button
+            if trackingManager.isTracking {
+                Button(action: { showingInterruptionDialog = true }) {
                     HStack {
-                        Image(systemName: "list.bullet")
-                        Text("Select Task")
+                        Image(systemName: "exclamationmark.triangle")
+                        Text("Log Interruption")
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
+                    .padding(.vertical, 5)
                 }
                 .buttonStyle(.bordered)
             }
@@ -223,74 +211,6 @@ struct MetricCard: View {
         .padding(.vertical, 8)
         .background(Color.secondary.opacity(0.1))
         .clipShape(RoundedRectangle(cornerRadius: 8))
-    }
-}
-
-struct TaskPickerView: View {
-    @Environment(\.dismiss) private var dismiss
-    @Query(sort: \Task.createdAt, order: .reverse) private var tasks: [Task]
-    
-    let trackingManager: TrackingManager
-    @State private var newTaskTitle = ""
-    
-    var body: some View {
-        VStack(spacing: 16) {
-            Text("Select or Create Task")
-                .font(.headline)
-            
-            // New Task Input
-            HStack {
-                TextField("New task...", text: $newTaskTitle)
-                    .textFieldStyle(.roundedBorder)
-                
-                Button("Create") {
-                    let task = trackingManager.createAdHocTask(title: newTaskTitle)
-                    trackingManager.startSession(for: task)
-                    dismiss()
-                }
-                .disabled(newTaskTitle.isEmpty)
-            }
-            
-            Divider()
-            
-            // Existing Tasks
-            ScrollView {
-                VStack(spacing: 8) {
-                    ForEach(todaysTasks) { task in
-                        Button(action: {
-                            trackingManager.startSession(for: task)
-                            dismiss()
-                        }) {
-                            HStack {
-                                Text(task.title)
-                                Spacer()
-                                if task.isPlanned {
-                                    Image(systemName: "calendar")
-                                        .foregroundStyle(.blue)
-                                }
-                            }
-                            .padding()
-                            .background(Color.secondary.opacity(0.1))
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-            }
-            
-            Button("Cancel") {
-                dismiss()
-            }
-            .buttonStyle(.bordered)
-        }
-        .padding()
-        .frame(width: 400, height: 500)
-    }
-    
-    private var todaysTasks: [Task] {
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-        return tasks.filter { $0.createdAt >= today && !$0.isCompleted }
     }
 }
 

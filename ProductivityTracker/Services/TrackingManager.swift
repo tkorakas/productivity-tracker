@@ -9,15 +9,21 @@ import Foundation
 import SwiftData
 import Combine
 
-/// Manages work session tracking and task management
+/// Manages work session tracking
 @Observable
 class TrackingManager {
     private let modelContext: ModelContext
     
     // Current state
     var currentSession: WorkSession?
-    var currentTask: Task?
-    var isTracking: Bool = false
+    var isTracking: Bool = false {
+        didSet {
+            onTrackingStateChanged?(isTracking)
+        }
+    }
+    
+    // Callback for state changes
+    var onTrackingStateChanged: ((Bool) -> Void)?
     
     init(modelContext: ModelContext) {
         self.modelContext = modelContext
@@ -29,23 +35,21 @@ class TrackingManager {
     // MARK: - Session Management
     
     /// Start a new work session
-    /// - Parameter task: Optional task to associate with the session
-    func startSession(for task: Task? = nil) {
+    func startSession() {
         guard !isTracking else {
             print("Session already in progress")
             return
         }
         
-        let session = WorkSession(startTime: Date(), task: task)
+        let session = WorkSession(startTime: Date())
         modelContext.insert(session)
         
         currentSession = session
-        currentTask = task
         isTracking = true
         
         try? modelContext.save()
         
-        print("Started session for task: \(task?.title ?? "Ad-hoc")")
+        print("Started session")
     }
     
     /// End the current work session
@@ -59,19 +63,12 @@ class TrackingManager {
         session.endTime = Date()
         session.interruptionReason = interruptionReason
         
-        // Mark task as completed if no interruption
-        if interruptionReason == nil, let task = currentTask {
-            task.isCompleted = true
-            task.completedAt = Date()
-        }
-        
         try? modelContext.save()
         
         print("Ended session. Duration: \(session.durationFormatted)")
         
         // Clear current state
         currentSession = nil
-        currentTask = nil
         isTracking = false
     }
     
@@ -84,69 +81,7 @@ class TrackingManager {
         }
     }
     
-    // MARK: - Task Management
-    
-    /// Create a new planned task
-    func createPlannedTask(title: String, importance: Int? = nil) -> Task {
-        let task = Task(
-            title: title,
-            isPlanned: true,
-            estimatedImportance: importance
-        )
-        
-        modelContext.insert(task)
-        
-        // Associate with today's day plan
-        let dayPlan = DayPlan.getOrCreate(for: Date(), in: modelContext)
-        task.dayPlan = dayPlan
-        
-        try? modelContext.save()
-        
-        return task
-    }
-    
-    /// Create an ad-hoc task
-    func createAdHocTask(title: String) -> Task {
-        let task = Task(
-            title: title,
-            isPlanned: false
-        )
-        
-        modelContext.insert(task)
-        try? modelContext.save()
-        
-        return task
-    }
-    
-    /// Delete a task
-    func deleteTask(_ task: Task) {
-        modelContext.delete(task)
-        try? modelContext.save()
-    }
-    
     // MARK: - Data Fetching
-    
-    /// Fetch all tasks
-    func fetchAllTasks() -> [Task] {
-        let descriptor = FetchDescriptor<Task>(
-            sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
-        )
-        return (try? modelContext.fetch(descriptor)) ?? []
-    }
-    
-    /// Fetch today's tasks
-    func fetchTodaysTasks() -> [Task] {
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-        
-        let descriptor = FetchDescriptor<Task>(
-            predicate: #Predicate { task in
-                task.createdAt >= today
-            },
-            sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
-        )
-        return (try? modelContext.fetch(descriptor)) ?? []
-    }
     
     /// Fetch all work sessions
     func fetchAllSessions() -> [WorkSession] {
@@ -192,7 +127,6 @@ class TrackingManager {
         
         if let activeSession = try? modelContext.fetch(descriptor).first {
             currentSession = activeSession
-            currentTask = activeSession.task
             isTracking = true
             print("Resumed active session")
         }

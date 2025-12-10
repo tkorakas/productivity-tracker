@@ -15,7 +15,6 @@ struct DashboardView: View {
     @State private var selectedTab = 0
     
     @Query(sort: \WorkSession.startTime, order: .reverse) private var allSessions: [WorkSession]
-    @Query(sort: \Task.createdAt, order: .reverse) private var allTasks: [Task]
     
     init(trackingManager: TrackingManager) {
         _trackingManager = State(initialValue: trackingManager)
@@ -29,17 +28,11 @@ struct DashboardView: View {
                 }
                 .tag(0)
             
-            TasksTab(trackingManager: trackingManager)
-                .tabItem {
-                    Label("Tasks", systemImage: "list.bullet")
-                }
-                .tag(1)
-            
             HistoryTab(sessions: allSessions)
                 .tabItem {
                     Label("History", systemImage: "clock.arrow.circlepath")
                 }
-                .tag(2)
+                .tag(1)
         }
         .frame(minWidth: 900, minHeight: 600)
     }
@@ -148,14 +141,8 @@ struct OverviewTab: View {
             if let session = trackingManager.currentSession {
                 HStack {
                     VStack(alignment: .leading) {
-                        if let task = trackingManager.currentTask {
-                            Text(task.title)
-                                .font(.headline)
-                        } else {
-                            Text("Ad-hoc Session")
-                                .font(.headline)
-                                .foregroundStyle(.secondary)
-                        }
+                        Text("Focus Session")
+                            .font(.headline)
                         
                         Text("Duration: \(session.durationFormatted)")
                             .font(.subheadline)
@@ -235,142 +222,6 @@ struct SummaryCard: View {
     }
 }
 
-// MARK: - Tasks Tab
-
-struct TasksTab: View {
-    @State var trackingManager: TrackingManager
-    @State private var showingNewTaskSheet = false
-    @Query(sort: \Task.createdAt, order: .reverse) private var tasks: [Task]
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                Text("Tasks")
-                    .font(.title2)
-                    .fontWeight(.bold)
-                
-                Spacer()
-                
-                Button(action: { showingNewTaskSheet = true }) {
-                    Label("New Task", systemImage: "plus")
-                }
-                .buttonStyle(.borderedProminent)
-            }
-            .padding()
-            
-            List {
-                Section("Today") {
-                    ForEach(todaysTasks) { task in
-                        TaskRowView(task: task, trackingManager: trackingManager)
-                    }
-                }
-                
-                Section("Earlier") {
-                    ForEach(olderTasks) { task in
-                        TaskRowView(task: task, trackingManager: trackingManager)
-                    }
-                }
-            }
-        }
-        .sheet(isPresented: $showingNewTaskSheet) {
-            NewTaskSheet(trackingManager: trackingManager)
-        }
-    }
-    
-    private var todaysTasks: [Task] {
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-        return tasks.filter { $0.createdAt >= today }
-    }
-    
-    private var olderTasks: [Task] {
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-        return tasks.filter { $0.createdAt < today }
-    }
-}
-
-struct TaskRowView: View {
-    let task: Task
-    let trackingManager: TrackingManager
-    
-    var body: some View {
-        HStack {
-            Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")
-                .foregroundStyle(task.isCompleted ? .green : .secondary)
-            
-            VStack(alignment: .leading) {
-                Text(task.title)
-                    .font(.headline)
-                
-                HStack {
-                    if task.isPlanned {
-                        Label("Planned", systemImage: "calendar")
-                            .font(.caption)
-                            .foregroundStyle(.blue)
-                    }
-                    
-                    if task.totalFocusedTime > 0 {
-                        Label("\(Int(task.totalFocusedTime / 60))m", systemImage: "clock")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
-            
-            Spacer()
-            
-            if !task.isCompleted {
-                Button(action: { trackingManager.startSession(for: task) }) {
-                    Image(systemName: "play.fill")
-                }
-                .buttonStyle(.borderless)
-            }
-        }
-    }
-}
-
-struct NewTaskSheet: View {
-    @Environment(\.dismiss) private var dismiss
-    let trackingManager: TrackingManager
-    
-    @State private var title = ""
-    @State private var isPlanned = true
-    @State private var importance: Int?
-    
-    var body: some View {
-        VStack(spacing: 20) {
-            Text("New Task")
-                .font(.headline)
-            
-            TextField("Task title", text: $title)
-                .textFieldStyle(.roundedBorder)
-            
-            Toggle("Planned Task", isOn: $isPlanned)
-            
-            HStack {
-                Button("Cancel") {
-                    dismiss()
-                }
-                .buttonStyle(.bordered)
-                
-                Button("Create") {
-                    if isPlanned {
-                        _ = trackingManager.createPlannedTask(title: title, importance: importance)
-                    } else {
-                        _ = trackingManager.createAdHocTask(title: title)
-                    }
-                    dismiss()
-                }
-                .buttonStyle(.borderedProminent)
-                .disabled(title.isEmpty)
-            }
-        }
-        .padding()
-        .frame(width: 400)
-    }
-}
-
 // MARK: - History Tab
 
 struct HistoryTab: View {
@@ -408,14 +259,8 @@ struct SessionRowView: View {
     var body: some View {
         HStack {
             VStack(alignment: .leading) {
-                if let task = session.task {
-                    Text(task.title)
-                        .font(.headline)
-                } else {
-                    Text("Ad-hoc Session")
-                        .font(.headline)
-                        .foregroundStyle(.secondary)
-                }
+                Text("Focus Session")
+                    .font(.headline)
                 
                 Text(timeFormatter.string(from: session.startTime))
                     .font(.caption)

@@ -13,7 +13,6 @@ extension Schema {
     /// The main schema for the ProductivityTracker app
     static var productivityTrackerSchema: Schema {
         Schema([
-            Task.self,
             WorkSession.self,
             AppSettings.self,
             DayPlan.self

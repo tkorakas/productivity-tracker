@@ -40,6 +40,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         // Initialize services
         trackingManager = TrackingManager(modelContext: modelContext)
+        
+        // Setup tracking state callback
+        trackingManager?.onTrackingStateChanged = { [weak self] isTracking in
+            DispatchQueue.main.async {
+                self?.updateMenuBarIcon(isTracking: isTracking)
+            }
+        }
+        
+        // Set initial state
+        updateMenuBarIcon(isTracking: trackingManager!.isTracking)
+        
         shortcutManager = ShortcutManager(trackingManager: trackingManager!)
         
         // Set popover content view with dependencies
@@ -84,6 +95,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         dashboardWindow?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+    }
+    
+    private func updateMenuBarIcon(isTracking: Bool) {
+        guard let button = statusItem?.button else { return }
+        let imageName = isTracking ? "play.circle" : "clock"
+        button.image = NSImage(systemSymbolName: imageName, accessibilityDescription: "Productivity Tracker")
     }
     
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {

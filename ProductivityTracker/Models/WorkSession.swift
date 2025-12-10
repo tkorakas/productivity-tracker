@@ -15,21 +15,16 @@ final class WorkSession {
     var endTime: Date?
     var interruptionReason: String?
     
-    // Relationship: A session belongs to a task (optional for ad-hoc sessions)
-    var task: Task?
-    
     init(
         id: UUID = UUID(),
         startTime: Date = Date(),
         endTime: Date? = nil,
-        interruptionReason: String? = nil,
-        task: Task? = nil
+        interruptionReason: String? = nil
     ) {
         self.id = id
         self.startTime = startTime
         self.endTime = endTime
         self.interruptionReason = interruptionReason
-        self.task = task
     }
     
     // Computed property: Duration in seconds

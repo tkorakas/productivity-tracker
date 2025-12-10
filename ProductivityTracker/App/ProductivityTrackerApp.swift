@@ -15,7 +15,6 @@ struct ProductivityTrackerApp: App {
     // Shared ModelContainer for access in AppDelegate
     static let sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Task.self,
             WorkSession.self,
             AppSettings.self,
             DayPlan.self
